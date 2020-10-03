@@ -31,11 +31,9 @@ datasmall$date <- as.POSIXct(datasmall$date)
 str(datasmall)
 
 # data set for weekday day
-data_weekday_day <- subset(datasmall, (SDate >= '2007/07/16 07:30:00' & SDate < '2007/07/16 17:00:00') | 
-                                      (SDate >= '2007/07/17 07:30:00' & SDate < '2007/07/17 17:00:00') | 
-                                      (SDate >= '2007/07/18 07:30:00' & SDate < '2007/07/18 17:00:00') |
-                                      (SDate >= '2007/07/19 07:30:00' & SDate < '2007/07/19 17:00:00') |
-                                      (SDate >= '2007/07/20 07:30:00' & SDate < '2007/07/20 17:00:00') )
+data_weekday_day <- subset(datasmall, (data$Date >= '2007/07/16' & data$Date < '2007/07/21') & 
+                                      (data$Time >= '07:30:00' & data$Time < '17:00:00'))
+                             
 head(data_weekday_day)
 
 #myts <- ts(datasmall$Global_intensity, frequency = 24*60, start = 0)
