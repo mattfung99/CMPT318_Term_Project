@@ -85,7 +85,7 @@ while (i <= m)
     j <- j + 1
   }
   j = 1
-  i <- i +1
+  i <- i + 1
 }
 
 rownames(CorMX) <- c('A', 'B', 'C', 'D', 'E', 'F', 'G')
@@ -169,15 +169,15 @@ vector_weekend_night <- data_weekend_night$Global_intensity
 calc_weekday_day <- vector()
 calc_weekday_day = calculate_average_minute(vector_weekday_day, 5, 570)
 
-# Calculate average of values per minute for weekday_day
+# Calculate average of values per minute for weekday_night
 calc_weekday_night <- vector()
 calc_weekday_night = calculate_average_minute(vector_weekday_night, 5, 870)
 
-# Calculate average of values per minute for weekday_day
+# Calculate average of values per minute for weekend_day
 calc_weekend_day <- vector()
 calc_weekend_day = calculate_average_minute(vector_weekend_day, 2, 570)
 
-# Calculate average of values per minute for weekday_day
+# Calculate average of values per minute for weekend_night
 calc_weekend_night <- vector()
 calc_weekend_night = calculate_average_minute(vector_weekend_night, 2, 870)
 
@@ -187,10 +187,10 @@ ts_weekday_day <- ts(calc_weekday_day, frequency = 570, start = 0)
 # Create time series for weekday_night
 ts_weekday_night <- ts(calc_weekday_night, frequency = 870, start = 0)
 
-# Create time series for weekday_day
+# Create time series for weekend_day
 ts_weekend_day <- ts(calc_weekend_day, frequency = 570, start = 0)
 
-# Create time series for weekday_day
+# Create time series for weekend_night
 ts_weekend_night <- ts(calc_weekend_night, frequency = 870, start = 0)
 
 # ---- Testing Only ----
