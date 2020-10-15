@@ -115,25 +115,25 @@ activePowerWeek42$Time <- as.POSIXct(activePowerWeek42$Time, format = "%H:%M:%S"
 ### Plot 
 p1 <- ggplot(activePowerWeek1, mapping = aes(x=Time, y=Global_active_power)) + 
   geom_point(color="light blue") +
-  ggtitle("Week 1 Monday Daytime Global Intensity") + theme(plot.title = element_text(hjust = 0.5)) +
+  ggtitle("Week 1 Monday Daytime Global Active Power") + theme(plot.title = element_text(hjust = 0.5)) +
   labs(y="Global Active Power (in Kilowatt)", x = "Time (in Hours)", color ="Fit Type") + 
   theme(plot.title = element_text(hjust=0.5), legend.position = "bottom") 
 
 p2 <- ggplot(activePowerWeek14, mapping = aes(x=Time, y=Global_active_power)) + 
   geom_point(color="light blue") +
-  ggtitle("Week 14 Monday Daytime Global Intensity") + theme(plot.title = element_text(hjust = 0.5)) +
+  ggtitle("Week 14 Monday Daytime Global Active Power") + theme(plot.title = element_text(hjust = 0.5)) +
   labs(y="Global Active Power (in Kilowatt)", x = "Time (in Hours)", color ="Fit Type") + 
   theme(plot.title = element_text(hjust=0.5), legend.position = "bottom") 
 
 p3 <- ggplot(activePowerWeek28, mapping = aes(x=Time, y=Global_active_power)) + 
   geom_point(color="light blue") +
-  ggtitle("Week 28 Monday Daytime Global Intensity") + theme(plot.title = element_text(hjust = 0.5)) +
+  ggtitle("Week 28 Monday Daytime Global Active Power") + theme(plot.title = element_text(hjust = 0.5)) +
   labs(y="Global Active Power (in Kilowatt)", x = "Time (in Hours)", color ="Fit Type") + 
   theme(plot.title = element_text(hjust=0.5), legend.position = "bottom") 
 
 p4 <- ggplot(activePowerWeek42, mapping = aes(x=Time, y=Global_active_power)) + 
   geom_point(color="light blue") +
-  ggtitle("Week 42 Monday Daytime Global Intensity") + theme(plot.title = element_text(hjust = 0.5)) +
+  ggtitle("Week 42 Monday Daytime Global Active Power") + theme(plot.title = element_text(hjust = 0.5)) +
   labs(y="Global Active Power (in Kilowatt)", x = "Time (in Hours)", color ="Fit Type") + 
   theme(plot.title = element_text(hjust=0.5), legend.position = "bottom") 
 
