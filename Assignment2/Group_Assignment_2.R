@@ -2,15 +2,16 @@
 library(dplyr)
 library(data.table)
 library(tidyverse)
-library(corrplot)
 library(ggplot2)
+library(pracma)
 
 ### Set Directory
 getwd()
 setwd("--- Set Your Directory Here ---")
 
 require(tidyverse)
-rawData <- readr::read_csv("Group_Assignment_2_Dataset.txt")
+rawData <- readr::read_csv("Dataset3.txt")
+rawData[is.na(rawData)] <- 0
 
 #--------------------------------------------------------------Data Cleaning-------------------------------------------------------
 ### Add timestamp to dataframe for graphing
@@ -139,3 +140,44 @@ p4 <- ggplot(activePowerWeek42, mapping = aes(x=Time, y=Global_active_power)) +
 
 ### 4 Plots 1 Diagram
 multiplot(p1, p2, p3, p4, cols=2)
+
+#----------------------------------------------------------------Question 2--------------------------------------------------------
+
+#----------------------------------------------------------------Question 3--------------------------------------------------------
+
+OneWeek = na.omit(rawData$Global_intensity[rawData$weekNum == "11"])
+plot(OneWeek)
+
+# Set the threshold at 1/5 of the peak Intensity 
+Threshold = max(OneWeek)/5
+MA1Week = movavg(OneWeek, 5, "s")
+diff = abs(OneWeek - MA1Week)
+max(diff)
+plot(diff)
+diff <-ifelse((diff > Threshold), 1, 0)
+cat(tCount = tabulate(diff))
+plot(diff)
+
+MA1Week = movavg(OneWeek, 5, "t")
+diff = abs(OneWeek - MA1Week)
+max(diff)
+plot(diff)
+diff <-ifelse((diff > Threshold), 1, 0)
+cat(tCount = tabulate(diff))
+plot(diff)
+
+MA1Week = movavg(OneWeek, 5, "w")
+diff = abs(OneWeek - MA1Week)
+max(diff)
+plot(diff)
+diff <-ifelse((diff > Threshold), 1, 0)
+cat(tCount = tabulate(diff))
+plot(diff)
+
+MA1Week = movavg(OneWeek, 5, "e")
+diff = abs(OneWeek - MA1Week)
+max(diff)
+plot(diff)
+diff <-ifelse((diff > Threshold), 1, 0)
+cat(tCount = tabulate(diff))
+plot(diff)
