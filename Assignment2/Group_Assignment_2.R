@@ -149,8 +149,8 @@ OneWeek = na.omit(rawData$Global_intensity[rawData$weekNum == "11"])
 plot(OneWeek)
 
 # Set the threshold at 1/5 of the peak Intensity 
-Threshold = max(OneWeek)/5
-MA1Week = movavg(OneWeek, 5, "s")
+Threshold = max(OneWeek)/10
+MA1Week = movavg(OneWeek, 10, "s")
 diff = abs(OneWeek - MA1Week)
 max(diff)
 plot(diff)
@@ -158,7 +158,7 @@ diff <-ifelse((diff > Threshold), 1, 0)
 cat(tCount = tabulate(diff))
 plot(diff)
 
-MA1Week = movavg(OneWeek, 5, "t")
+MA1Week = movavg(OneWeek, 10, "t")
 diff = abs(OneWeek - MA1Week)
 max(diff)
 plot(diff)
@@ -166,7 +166,7 @@ diff <-ifelse((diff > Threshold), 1, 0)
 cat(tCount = tabulate(diff))
 plot(diff)
 
-MA1Week = movavg(OneWeek, 5, "w")
+MA1Week = movavg(OneWeek, 10, "w")
 diff = abs(OneWeek - MA1Week)
 max(diff)
 plot(diff)
@@ -174,7 +174,7 @@ diff <-ifelse((diff > Threshold), 1, 0)
 cat(tCount = tabulate(diff))
 plot(diff)
 
-MA1Week = movavg(OneWeek, 5, "e")
+MA1Week = movavg(OneWeek, 10, "e")
 diff = abs(OneWeek - MA1Week)
 max(diff)
 plot(diff)
