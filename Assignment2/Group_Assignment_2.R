@@ -30,7 +30,7 @@ rawData$week <- ifelse(daysWeek %in% c("6", "7"), "weekend", "weekdays")
 dataTime <- as.ITime(format(rawData$Time, format = "%H:%M:%S"))  #RS added to correct error when run in Linux
 rawData$STime <- as.ITime(format(rawData$Time, format = "%H:%M:%S"))  #RS added to correct error when run in Linux
 startTime <- as.ITime("06:00")
-endTime <- as.ITime("18:00")
+endTime <- as.ITime("9:00")
 rawData$day <- ifelse((dataTime >= startTime & dataTime <= endTime), "morning", "evening")
 
 #-------------------------------------------------------------Multiplot Code-------------------------------------------------------
