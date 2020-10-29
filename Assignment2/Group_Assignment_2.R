@@ -3,6 +3,7 @@ library(dplyr)
 library(data.table)
 library(tidyverse)
 library(ggplot2)
+library(depmixS4)
 library(pracma)
 
 ### Set Directory
@@ -143,6 +144,67 @@ multiplot(p1, p2, p3, p4, cols=2)
 
 #----------------------------------------------------------------Question 2--------------------------------------------------------
 
+powerData <- read.table("Dataset3.txt", sep = ',', header = TRUE)
+powerData <- na.omit(powerData[, 1:9])
+
+### timestamp for graphing
+dateTimeCombine <- paste(powerData$Date, powerData$Time)
+powerData$timestamp <- as.POSIXlt(strptime(dateTimeCombine, format = "%d/%m/%Y %H:%M:%S"))
+
+### Label all the weeks and days of the week
+formatingDates <- as.Date(powerData$Date, format = "%d/%m/%Y")
+powerData$weekNumber <- format(formatingDates,"%V")
+powerData$dayNumber <- as.integer(format(formatingDates,"%u"))
+
+### Filter out all the Mondays
+powerDataMonday <- filter(powerData, dayNumber == 1) # Monday
+
+### Label time of the day - morning or evening
+STime <- as.ITime(format(powerDataMonday$Time, format = "%H:%M:%S"))  #RS added to correct error when run in Linux
+startingTime <- as.ITime("07:00")
+endingTime <- as.ITime("09:30")
+mondayMorning <- cbind(powerDataMonday, STime)
+mondayMorning <- filter(mondayMorning, STime >= startingTime & STime <= endingTime)
+
+grouping <- group_by(mondayMorning, Date)
+groupCount <- summarise(grouping, count=n())
+
+set.seed(298224)
+
+minState <- 2
+maxState <- 20
+numStates <- minState:maxState
+
+# Create a container for BICs
+BIC.vector = c("States", "BICs", "logLik")
+BIC.models = array(0, dim = c(maxState, length(BIC.vector)))
+colnames(BIC.models) = BIC.vector
+
+for (i in numStates)
+{
+  model = depmix(response = mondayMorning$Global_intensity ~ 1, nstates = i, family = gaussian(), data = mondayMorning, ntimes = groupCount$count)
+  fitModel <- fit(model)
+  
+  # Extract states, BICs, and Log likelihood
+  BIC.models[i, "States"] <- i
+  BIC.models[i, "BICs"] <- BIC(fitModel)
+  BIC.models[i, "logLik"] <- logLik(fitModel)
+}
+BIC.models
+
+# final plot
+par(mar = c(5, 5, 3, 5))
+plot(BIC.models[1:20, 2], type ="l", ylab = "BICs",
+     main = "BIC and Log-Likelihood for each state", xlab = "States", col = "blue")
+
+par(new = TRUE)
+plot(BIC.models[1:20,3], type = "l", xaxt = "n", yaxt = "n", ylab = "", xlab = "", col = "red", lty = 2)
+
+axis(side = 4)
+axis(side = 1, at = seq(0, 20, by = 1))
+
+mtext("Log Likelihood", side = 4, line = 3)
+legend("top", c("BICs", "Log-Likelihoods"), col = c("blue", "red"), lty = c(1, 2))
 #----------------------------------------------------------------Question 3--------------------------------------------------------
 
 OneWeek = na.omit(rawData$Global_intensity[rawData$weekNum == "11"])
