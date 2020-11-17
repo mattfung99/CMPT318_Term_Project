@@ -63,11 +63,12 @@ calculateAverage <- function(responseVariable)
   responseVariableData$Time <-format(as.POSIXct(responseVariableData$timestamp), format = "%H:%M:%S")
   responseVariableData$Time <- as.POSIXct(responseVariableData$Time, format = "%H:%M:%S")
   
-  # Group and average the time periods 
+  ### Group and average the time periods 
   avgResponseVariable <- responseVariableData %>%
     group_by(Time, STime) %>%
     summarise(avg_value = mean(get(responseVariable)))
   
+  ### Return updated dataframe
   return(avgResponseVariable)
 }
 
@@ -101,8 +102,13 @@ names(pcaData)[5] <- "Sub_metering_1"
 names(pcaData)[6] <- "Sub_metering_2"
 names(pcaData)[7] <- "Sub_metering_3"
 
+### Create PCA
 Test.pca <- prcomp(pcaData, center = TRUE, scale. = TRUE)
 str(Test.pca)
+
+### Plot PCA
 ggbiplot(Test.pca, scale=.75, alpha = 0.0, var.scale = 1.0) +
   ggtitle("PCA for 7 Response Variables") + theme(plot.title = element_text(hjust = 0.5))
+
+### PCA Results
 summary(Test.pca)
