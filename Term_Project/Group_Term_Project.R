@@ -4,7 +4,6 @@ library(stats)
 library(ggplot2)
 library(ggbiplot) # Uses plyr, need to load plyr before dplyr or there will be conflicts
 library(dplyr)
-library(depmixS4)
 
 ### Set Directory
 getwd()
@@ -114,5 +113,70 @@ summary(Test.pca)
 #------------------------------------------------Setup Testing and Training Data For Univariate HMM--------------------------------------------
 
 ### Setup train data for Global Intensity
-TrainIntensityData <- filter(filteredData, year < "9")  ### Data for 
-TestIntensityData <- filter(filteredData, year == "9")
+trainIntensityData <- filter(filteredData, year < "9")  ### Data for all Thursdays during 10:30AM - 1:30PM from 2006 - 2008
+testIntensityData <- filter(filteredData, year == "9")  ### Data for all Thursdays during 10:30AM - 1:30PM in 2009
+
+### Remove na
+trainIntensityData <- na.omit(trainIntensityData[, 1:9])
+testIntensityData <- na.omit(testIntensityData[, 1:9])
+
+#-------------------------------------------------------------Setup Univariate HMM-------------------------------------------------------------
+
+### Detach ggbiplot and plyr
+detach("package:ggbiplot", unload = TRUE)
+detach("package:plyr", unload = TRUE) 
+
+### Import dplyr again to use summarize
+library(dplyr)
+library(depmixS4)
+library(pracma)
+
+### Create groups 
+trainGroup <- group_by(trainIntensityData, Date)
+trainGroupCount <- summarise(trainGroup, count = n())
+
+testGroup <- group_by(testIntensityData, Date)
+testGroupCount <- summarise(testGroup, count = n())
+
+### Set Seed
+set.seed(298224)
+
+### Define number of states
+minState <- 2
+maxState <- 20
+numStates <- minState:maxState
+
+# Create a container for BICs
+BIC.vector = c("States", "BICs", "logLik")
+BIC.models = array(0, dim = c(maxState, length(BIC.vector)))
+colnames(BIC.models) = BIC.vector
+
+#-------------------------------------------------------------Train Univariate HMM-------------------------------------------------------------
+
+### Iterate through states 2 - 20
+for (i in numStates)
+{
+  model = depmix(response = trainIntensityData$Global_intensity ~ 1, nstates = i, family = gaussian(), data = trainIntensityData, ntimes = trainGroupCount$count)
+  fitModel <- fit(model)
+  
+  # Extract states, BICs, and Log likelihood
+  BIC.models[i, "States"] <- i
+  BIC.models[i, "BICs"] <- BIC(fitModel)
+  BIC.models[i, "logLik"] <- logLik(fitModel)
+}
+BIC.models
+
+### Plot BIC VS Log-Likelihood
+par(mar = c(5, 5, 3, 5))
+plot(BIC.models[1:20, 2], type ="l", ylab = "BICs",
+     main = "BIC and Log-Likelihood for each state", xlab = "States", col = "blue")
+
+par(new = TRUE)
+plot(BIC.models[1:20,3], type = "l", xaxt = "n", yaxt = "n", ylab = "", xlab = "", col = "red", lty = 2)
+
+axis(side = 4)
+axis(side = 1, at = seq(0, 20, by = 1))
+
+mtext("Log Likelihood", side = 4, line = 3)
+legend("top", c("BICs", "Log-Likelihoods"), col = c("blue", "red"), lty = c(1, 2))
+
