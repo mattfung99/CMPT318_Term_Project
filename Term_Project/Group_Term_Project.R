@@ -180,3 +180,30 @@ axis(side = 1, at = seq(0, 20, by = 1))
 mtext("Log Likelihood", side = 4, line = 3)
 legend("top", c("BICs", "Log-Likelihoods"), col = c("blue", "red"), lty = c(1, 2))
 
+#--------------------------------------------------------------Test Univariate HMM-------------------------------------------------------------
+
+### Fit Model for expected ideal test state
+testIntensityModel = depmix(response = testIntensityData$Global_intensity ~ 1, nstates = 7, family = gaussian(), data = testIntensityData, ntimes = testGroupCount$count)
+testFitModel <- fit(testIntensityModel)
+
+testBIC <- BIC(testFitModel)
+testLogLik <- logLik(testFitModel)
+
+### Output
+testBIC
+testLogLik
+
+### Train BIC State 7
+###   BIC: -10457.846
+###   LogLik: 5534.643 
+
+### Test BIC State 7
+###   BIC: -293.1588
+###   Loglik: 427.74
+
+#-----------------------------------------------Setup Testing and Training Data For Multivariate HMM-------------------------------------------
+
+### To be done...
+
+# ---------------------------------------------------------- 2. Anomaly Detection -------------------------------------------------------------
+# 
