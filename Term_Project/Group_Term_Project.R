@@ -1,18 +1,16 @@
 ### Import Libraries
-library(dplyr)
 library(data.table)
-library(tidyverse)
 library(stats)
 library(ggplot2)
-library(ggbiplot)
+library(ggbiplot) # Uses plyr, need to load plyr before dplyr or there will be conflicts
+library(dplyr)
 library(depmixS4)
 
 ### Set Directory
 getwd()
 setwd("--- Set Your Directory Here ---")
 
-require(tidyverse)
-rawData <- readr::read_csv("TermProjectData.txt")
+rawData = read.table("TermProjectData.txt", sep = ',', header = TRUE)
 rawData[is.na(rawData)] <- 0
 
 ###############################################################################################################################################
