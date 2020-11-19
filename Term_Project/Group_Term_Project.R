@@ -25,7 +25,7 @@ rawData[is.na(rawData)] <- 0
 dateTime <- paste(rawData$Date, rawData$Time)
 rawData$timestamp <- as.POSIXlt(strptime(dateTime, format = "%d/%m/%Y %H:%M:%S"))
 
-### Label all the weeks for 1408
+### Label all the weeks for the rawData
 dateFormat <- as.Date(rawData$Date, format = "%d/%m/%Y")
 rawData$weekNum <- format(dateFormat,"%V")
 
@@ -35,9 +35,9 @@ rawData$week <- ifelse(daysWeek %in% c("6", "7"), "weekend", "weekdays")
 rawData$dayWeek <- format(as.Date(rawData$Date, format = "%d/%m/%Y"),"%u")
 rawData$year <- as.integer(format(as.Date(rawData$Date, format = "%d/%m/%Y"),"%y"))
 
-### Label time of the day   - morning or evening
-dataTime <- as.ITime(format(rawData$Time, format = "%H:%M:%S"))  #RS added to correct error when run in Linux
-rawData$STime <- as.integer(rawData$Time)  #RS added to correct error when run in Linux
+### Label time of the day - window or other
+dataTime <- as.ITime(format(rawData$Time, format = "%H:%M:%S"))  # RS added to correct error when run in Linux
+rawData$STime <- as.integer(rawData$Time)  # RS added to correct error when run in Linux
 startTime <- as.ITime("10:30")
 endTime <- as.ITime("13:30")
 rawData$day <- ifelse((dataTime >= startTime & dataTime <= endTime), "window", "other")
@@ -45,16 +45,16 @@ rawData$day <- ifelse((dataTime >= startTime & dataTime <= endTime), "window", "
 ### Adjust 0 values in Voltage (they are not meaningful)
 rawData$Voltage[rawData$Voltage < 200.0] = 220.0  
 
-#---------------------------------------------------------------Setup Data for PCA--------------------------------------------------------------
+#---------------------------------------------------------------Setup Data for PCA-------------------------------------------------------------
 
-### Create Dataframe for Week 5, Wednesday, 10:30AM - 1:30PM
+### Create Dataframe for Thursday, 10:30AM - 1:30PM
 filteredData <- filter(rawData, daysWeek == "4", day == "window")
 
 ### Calculate Average for every minute during the selected window
 calculateAverage <- function(responseVariable)
 {
   
-  ### Filter for Global Intensity
+  ### Filter for the selected response variable
   responseVariableData <- filteredData[, c("timestamp", "STime", responseVariable)]
   
   ### Format the time for Week 5
@@ -79,7 +79,7 @@ subMetering1Data <- calculateAverage("Sub_metering_1")
 subMetering2Data <- calculateAverage("Sub_metering_2")
 subMetering3Data <- calculateAverage("Sub_metering_3")
 
-#-------------------------------------------------------------Compute and Plot PCA--------------------------------------------------------------
+#-------------------------------------------------------------Compute and Plot PCA-------------------------------------------------------------
 
 ### Combine the average values from all 7 response variables
 ### From Left to Right: Intensity, Active Power, Reactive Power, Voltage, Sub Metering 1, Sub Metering 2, Sub Metering 3
@@ -110,3 +110,9 @@ ggbiplot(Test.pca, scale=.75, alpha = 0.0, var.scale = 1.0) +
 
 ### PCA Results
 summary(Test.pca)
+
+#------------------------------------------------Setup Testing and Training Data For Univariate HMM--------------------------------------------
+
+### Setup train data for Global Intensity
+TrainIntensityData <- filter(filteredData, year < "9")  ### Data for 
+TestIntensityData <- filter(filteredData, year == "9")
