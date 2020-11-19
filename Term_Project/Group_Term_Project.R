@@ -110,6 +110,9 @@ ggbiplot(Test.pca, scale=.75, alpha = 0.0, var.scale = 1.0) +
 ### PCA Results
 summary(Test.pca)
 
+### PCA Correlations
+Test.pca
+
 #------------------------------------------------Setup Testing and Training Data For Univariate HMM--------------------------------------------
 
 ### Setup train data for Global Intensity
