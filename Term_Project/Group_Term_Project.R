@@ -9,8 +9,7 @@ library(dplyr)
 getwd()
 setwd("--- Set Your Directory Here ---")
 
-rawData = read.table("TermProjectData.txt", sep = ',', header = TRUE)
-rawData[is.na(rawData)] <- 0
+rawData = read.table("TermProjectDataCleaned.txt", sep = ',', header = TRUE)
 
 ###############################################################################################################################################
 # ----------------------------------------------------------------- PART 1---------------------------------------------------------------------
@@ -37,8 +36,8 @@ rawData$year <- as.integer(format(as.Date(rawData$Date, format = "%d/%m/%Y"),"%y
 ### Label time of the day - window or other
 dataTime <- as.ITime(format(rawData$Time, format = "%H:%M:%S"))  # RS added to correct error when run in Linux
 rawData$STime <- as.integer(rawData$Time)  # RS added to correct error when run in Linux
-startTime <- as.ITime("10:30")
-endTime <- as.ITime("13:30")
+startTime <- as.ITime("16:00")
+endTime <- as.ITime("19:59")
 rawData$day <- ifelse((dataTime >= startTime & dataTime <= endTime), "window", "other")
 
 ### Adjust 0 values in Voltage (they are not meaningful)
@@ -46,8 +45,8 @@ rawData$Voltage[rawData$Voltage < 200.0] = 220.0
 
 #---------------------------------------------------------------Setup Data for PCA-------------------------------------------------------------
 
-### Create Dataframe for Thursday, 10:30AM - 1:30PM
-filteredData <- filter(rawData, daysWeek == "4", day == "window")
+### Create Dataframe for Tuesday, 4:00PM - 7:59PM
+filteredData <- filter(rawData, daysWeek == "2", day == "window")
 
 ### Calculate Average for every minute during the selected window
 calculateAverage <- function(responseVariable)
@@ -64,6 +63,11 @@ calculateAverage <- function(responseVariable)
   avgResponseVariable <- responseVariableData %>%
     group_by(Time, STime) %>%
     summarise(avg_value = mean(get(responseVariable)))
+  
+  ### Standardize the data
+  sdAVR = sd(avgResponseVariable$avg_value)
+  meanAVR = mean(avgResponseVariable$avg_value)
+  avgResponseVariable$avg_value <- (avgResponseVariable$avg_value - meanAVR) / sdAVR
   
   ### Return updated dataframe
   return(avgResponseVariable)
@@ -113,21 +117,39 @@ summary(Test.pca)
 ### PCA Correlations
 Test.pca
 
-#------------------------------------------------Setup Testing and Training Data For Univariate HMM--------------------------------------------
-
-### Setup train data for Global Intensity
-trainIntensityData <- filter(filteredData, year < "9")  ### Data for all Thursdays during 10:30AM - 1:30PM from 2006 - 2008
-testIntensityData <- filter(filteredData, year == "9")  ### Data for all Thursdays during 10:30AM - 1:30PM in 2009
-
-### Remove na
-trainIntensityData <- na.omit(trainIntensityData[, 1:9])
-testIntensityData <- na.omit(testIntensityData[, 1:9])
-
-#-------------------------------------------------------------Setup Univariate HMM-------------------------------------------------------------
+#-------------------------------------------------------------Corr Matrix for Window-----------------------------------------------------------
 
 ### Detach ggbiplot and plyr
 detach("package:ggbiplot", unload = TRUE)
 detach("package:plyr", unload = TRUE) 
+
+### Import library
+library(corrplot)
+
+### Subset all relevant attributes
+corrRawData <- filteredData[, c(3:9)]
+
+### Construct a correlation matrix
+corrMatrix <- (round(cor(corrRawData, method = "pearson"), 3))
+corrMatrix
+
+# Visualize correlation matrix 
+corrplot(corrMatrix, method = "color")
+
+#------------------------------------------------Setup Testing and Training Data For Univariate HMM--------------------------------------------
+
+### Setup train data for Global Intensity
+trainIntensityData <- filter(filteredData, year < "9")  ### Data for all Tuesday during 4:00PM - 7:59PM from 2006 - 2008
+trainIntensityData <- trainIntensityData[c(1, 6)]
+
+### Setup test data for Global Intensity
+testIntensityData <- filter(filteredData, year == "9")  ### Data for all Tuesdays during 10:30AM - 1:30PM in 2009
+testIntensityData <- testIntensityData[c(1, 6)]
+
+#-------------------------------------------------------------Setup Univariate HMM-------------------------------------------------------------
+
+### Detach corrplot
+detach("package:corrplot", unload = TRUE)
 
 ### Import dplyr again to use summarize
 library(dplyr)
@@ -185,28 +207,212 @@ legend("top", c("BICs", "Log-Likelihoods"), col = c("blue", "red"), lty = c(1, 2
 
 #--------------------------------------------------------------Test Univariate HMM-------------------------------------------------------------
 
-### Fit Model for expected ideal test state
-testIntensityModel = depmix(response = testIntensityData$Global_intensity ~ 1, nstates = 7, family = gaussian(), data = testIntensityData, ntimes = testGroupCount$count)
-testFitModel <- fit(testIntensityModel)
+### Set Seed
+set.seed(298224)
 
-testBIC <- BIC(testFitModel)
-testLogLik <- logLik(testFitModel)
+### Train model for ideal state
+trainIntensityModel = depmix(response = trainIntensityData$Global_intensity ~ 1, nstates = 11, family = gaussian(), data = trainIntensityData, ntimes = trainGroupCount$count)
+
+### Fit model
+trainFitModel <- fit(trainIntensityModel)
+
+### Use forwardbackward algorithm
+trainIntensityObject <- forwardbackward(trainFitModel)
+
+################################################################
+
+### Test model for ideal state
+testIntensityModel = depmix(response = testIntensityData$Global_intensity ~ 1, nstates = 11, family = gaussian(), data = testIntensityData, ntimes = testGroupCount$count)
+
+### Run getpars to get the parameters from a fitted model
+testIntensity <- setpars(testIntensityModel, getpars(trainFitModel))
+
+### Use forwardbackward algorithm
+testIntensityObject <- forwardbackward(testIntensity)
 
 ### Output
-testBIC
-testLogLik
+(trainIntensityObject$logLike)
+(testIntensityObject$logLike * nrow(trainIntensityData) / nrow(testIntensityData))
 
-### Train BIC State 7
-###   BIC: -10457.846
-###   LogLik: 5534.643 
+################################################################
 
-### Test BIC State 7
-###   BIC: -293.1588
-###   Loglik: 427.74
+### Train State 11
+###   LogLik: -21598.04
 
-#-----------------------------------------------Setup Testing and Training Data For Multivariate HMM-------------------------------------------
+### Test State 11
+###   Loglik: -22155.41
 
-### To be done...
+### Difference = 557.37
 
 # ---------------------------------------------------------- 2. Anomaly Detection -------------------------------------------------------------
 # 
+#------------------------------------------------------------Read in Anomaly Data--------------------------------------------------------------
+
+### Read In
+anomalyData1 = read.table("Data1(WithAnomalies).txt", sep = ',', header = TRUE)
+anomalyData2 = read.table("Data2(WithAnomalies).txt", sep = ',', header = TRUE)
+anomalyData3 = read.table("Data3(WithAnomalies).txt", sep = ',', header = TRUE)
+
+#-------------------------------------------------------------Clean Anomaly Data---------------------------------------------------------------
+
+setAnomalyData <- function(df)
+{
+  ### Add timestamp to dataframe for graphing
+  dateTime <- paste(df$Date, df$Time)
+  df$timestamp <- as.POSIXlt(strptime(dateTime, format = "%d/%m/%Y %H:%M:%S"))
+  
+  ### Label all the weeks for the df
+  dateFormat <- as.Date(df$Date, format = "%d/%m/%Y")
+  df$weekNum <- format(dateFormat,"%V")
+  
+  ### Label weekday or weekend
+  daysWeek <- format(as.Date(df$Date, format = "%d/%m/%Y"),"%u") # days of the week 1-7 (Monday-Sunday)
+  
+  ### Label time of the day - window or other
+  dataTime <- as.ITime(format(df$Time, format = "%H:%M:%S"))  # RS added to correct error when run in Linux
+  df$STime <- as.integer(df$Time)  # RS added to correct error when run in Linux
+  startTime <- as.ITime("16:00")
+  endTime <- as.ITime("19:59")
+  df$day <- ifelse((dataTime >= startTime & dataTime <= endTime), "window", "other")
+  
+  ### Filter to get time window
+  df <- filter(df, daysWeek == "2", day == "window")
+  df <- df[c(1,6)]
+  
+  ### return dataframe
+  return (df)
+}
+
+### Create dataframes for anomaly1, anomaly2, anomaly3
+anomaly1IntensityData <- setAnomalyData(anomalyData1)
+anomaly2IntensityData <- setAnomalyData(anomalyData2)
+anomaly3IntensityData <- setAnomalyData(anomalyData3)
+
+#-------------------------------------------------------------Anomaly Detection 1--------------------------------------------------------------
+
+### Create Groups
+a1Group <- group_by(anomaly1IntensityData, Date)
+a1GroupCount <- summarise(a1Group, count = n())
+
+### Set Seed
+set.seed(298224)
+
+### Training model for ideal state
+trainIntensityModel = depmix(response = trainIntensityData$Global_intensity ~ 1, nstates = 11, family = gaussian(), data = trainIntensityData, ntimes = trainGroupCount$count)
+
+### Fit model
+trainFitModel <- fit(trainIntensityModel)
+
+### Use forwardbackward algorithm
+trainIntensityObject <- forwardbackward(trainFitModel)
+
+################################################################
+
+### Test model with anomaly data 1 for ideal state
+a1IntensityModel = depmix(response = anomaly1IntensityData$Global_intensity ~ 1, nstates = 11, family = gaussian(), data = anomaly1IntensityData, ntimes = a1GroupCount$count)
+
+### Run getpars to get the parameters from a fitted model
+a1Intensity <- setpars(a1IntensityModel, getpars(trainFitModel))
+
+### Use forwardbackward algorithm
+a1IntensityObject <- forwardbackward(a1Intensity)
+
+### Output
+(trainIntensityObject$logLike)
+(a1IntensityObject$logLike * nrow(trainIntensityData) / nrow(anomaly1IntensityData))
+
+################################################################
+
+### Train State 11
+###   LogLik: -21598.04
+
+### Test State 11
+###   Loglik: -29227.98
+
+### Difference = 7629.94
+
+#-------------------------------------------------------------Anomaly Detection 2--------------------------------------------------------------
+
+### Create Groups
+a2Group <- group_by(anomaly2IntensityData, Date)
+a2GroupCount <- summarise(a2Group, count = n())
+
+### Set Seed
+set.seed(298224)
+
+### Training model for ideal state
+trainIntensityModel = depmix(response = trainIntensityData$Global_intensity ~ 1, nstates = 11, family = gaussian(), data = trainIntensityData, ntimes = trainGroupCount$count)
+
+### Fit model
+trainFitModel <- fit(trainIntensityModel)
+
+### Use forwardbackward algorithm
+trainIntensityObject <- forwardbackward(trainFitModel)
+
+################################################################
+
+### Test model with anomaly data 1 for ideal state
+a2IntensityModel = depmix(response = anomaly2IntensityData$Global_intensity ~ 1, nstates = 11, family = gaussian(), data = anomaly2IntensityData, ntimes = a2GroupCount$count)
+
+### Run getpars to get the parameters from a fitted model
+a2Intensity <- setpars(a2IntensityModel, getpars(trainFitModel))
+
+### Use forwardbackward algorithm
+a2IntensityObject <- forwardbackward(a2Intensity)
+
+### Output
+(trainIntensityObject$logLike)
+(a2IntensityObject$logLike * nrow(trainIntensityData) / nrow(anomaly2IntensityData))
+
+################################################################
+
+### Train State 11
+###   LogLik: -21598.04
+
+### Test State 11
+###   Loglik: -48798.82
+
+### Difference = 27200.78
+
+#-------------------------------------------------------------Anomaly Detection 3--------------------------------------------------------------
+
+### Create Groups
+a3Group <- group_by(anomaly3IntensityData, Date)
+a3GroupCount <- summarise(a3Group, count = n())
+
+### Set Seed
+set.seed(298224)
+
+### Training model for ideal state
+trainIntensityModel = depmix(response = trainIntensityData$Global_intensity ~ 1, nstates = 11, family = gaussian(), data = trainIntensityData, ntimes = trainGroupCount$count)
+
+### Fit model
+trainFitModel <- fit(trainIntensityModel)
+
+### Use forwardbackward algorithm
+trainIntensityObject <- forwardbackward(trainFitModel)
+
+################################################################
+
+### Test model with anomaly data 1 for ideal state
+a3IntensityModel = depmix(response = anomaly3IntensityData$Global_intensity ~ 1, nstates = 11, family = gaussian(), data = anomaly3IntensityData, ntimes = a3GroupCount$count)
+
+### Run getpars to get the parameters from a fitted model
+a3Intensity <- setpars(a3IntensityModel, getpars(trainFitModel))
+
+### Use forwardbackward algorithm
+a3IntensityObject <- forwardbackward(a3Intensity)
+
+### Output
+(trainIntensityObject$logLike)
+(a3IntensityObject$logLike * nrow(trainIntensityData) / nrow(anomaly3IntensityData))
+
+################################################################
+
+### Train State 11
+###   LogLik: -21598.04
+
+### Test State 11
+###   Loglik: -49608.86
+
+### Difference = 28010.82
