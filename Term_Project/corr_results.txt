@@ -1,8 +1,0 @@
-                      Global_active_power Global_reactive_power Voltage Global_intensity Sub_metering_1 Sub_metering_2 Sub_metering_3
-Global_active_power                 1.000                 0.099  -0.310            0.683          0.167          0.321          0.313
-Global_reactive_power               0.099                 1.000  -0.183            0.318          0.230          0.096          0.064
-Voltage                            -0.310                -0.183   1.000           -0.442         -0.231         -0.216         -0.169
-Global_intensity                    0.683                 0.318  -0.442            1.000          0.478          0.464          0.503
-Sub_metering_1                      0.167                 0.230  -0.231            0.478          1.000          0.065          0.071
-Sub_metering_2                      0.321                 0.096  -0.216            0.464          0.065          1.000          0.052
-Sub_metering_3                      0.313                 0.064  -0.169            0.503          0.071          0.052          1.000
